@@ -13,6 +13,11 @@ A bit of brain wrestling later, I managed to write this somewhat unreadable snip
 
 ```gleam
 fn decoder() {
+  let file_decoder = {
+    use name <- decode.field("name", decode.string)
+    decode.success(name)
+  }
+
   use length <- decode.field("length", decode.int)
 
   let idcs =
@@ -55,10 +60,16 @@ The object entries are dynamic and depend on what `length` is set to. Now, it cl
 - Then, generate the decoder for the first field.
 - Now, figure out how to pass that to the decoder of the next field. Wait, or should the next field take the current decoder as a parameter? (This was the brain wrestling part)
 - All of a sudden, there were no compilation errors and it "Just Worked".
-Revisiting the solution, I wanted to address the `assert` that should pretty much always be avoided since it can cause a panic..
+
+Revisiting the solution, I wanted to address the `assert` that should pretty much always be avoided since it can cause a panic.
 
 ```gleam
 fn decoder() {
+  let file_decoder = {
+    use name <- decode.field("name", decode.string)
+    decode.success(name)
+  }
+
   use length <- decode.field("length", decode.int)
 
   let indices =

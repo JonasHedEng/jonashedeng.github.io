@@ -180,6 +180,11 @@ While working on a little side project I’m doing just for fun (and to learn), 
 <p>While working on a little side project I&rsquo;m doing just for fun (and to learn), I encountered an &ldquo;interesting&rdquo; data structure that I wanted to extract a couple of fields from. Initially I thought it to be a basic dictionary-like data structure but I soon realized it was a bit more convoluted.</p>
 <p>A bit of brain wrestling later, I managed to write this somewhat unreadable snippet that seemingly does the job. At the time I didn&rsquo;t think much about it, I was mostly satisfied that I got something working.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gleam" data-lang="gleam"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">fn</span> <span style="color:#666;font-weight:bold;font-style:italic">decoder</span>() {
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> file_decoder = {
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">use</span> name &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(<span style="color:#666;font-style:italic">&#34;name&#34;</span>, decode.string)
+</span></span><span style="display:flex;"><span>    decode.<span style="color:#666;font-weight:bold;font-style:italic">success</span>(name)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="font-weight:bold;text-decoration:underline">use</span> length &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(<span style="color:#666;font-style:italic">&#34;length&#34;</span>, decode.int)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> idcs =
@@ -211,15 +216,20 @@ While working on a little side project I’m doing just for fun (and to learn), 
 </span></span><span style="display:flex;"><span>  &#34;1&#34;: {&#34;name&#34;: <span style="color:#666;font-style:italic">&#34;file2.txt&#34;</span>},
 </span></span><span style="display:flex;"><span>  &#34;2&#34;: {&#34;name&#34;: <span style="color:#666;font-style:italic">&#34;file3.txt&#34;</span>}
 </span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>Now, it clicked. The reason I struggled so with getting the decoder decent was that the incoming data structure was &ldquo;interesting&rdquo; at best and rather not at all how I would&rsquo;ve preferred it. What I also realized, was that although having worked professionally in Rust for about 6-7 years, I would dread having to implement the decoder for such a data structure (at least for a few seconds, before realizing it&rsquo;s not that difficult, serde is great!). With Gleam&rsquo;s <code>decode</code> however, I did it without fully realizing how inconvenient the incoming data was. I simply took it step by step.</p>
+</span></span></code></pre></div><p>The object entries are dynamic and depend on what <code>length</code> is set to. Now, it clicked. The reason I struggled so with getting the decoder decent was that the incoming data structure was &ldquo;interesting&rdquo; at best and rather not at all how I would&rsquo;ve preferred it. What I also realized, was that although having worked professionally in Rust for about 6-7 years, I would dread having to implement the decoder for such a data structure (at least for a few seconds, before realizing it&rsquo;s not that difficult, serde is great!). With Gleam&rsquo;s <code>decode</code> however, I did it without fully realizing how inconvenient the incoming data was. I simply took it step by step.</p>
 <ul>
 <li>First, decode the <code>length</code>.</li>
 <li>Then, generate the decoder for the first field.</li>
 <li>Now, figure out how to pass that to the decoder of the next field. Wait, or should the next field take the current decoder as a parameter? (This was the brain wrestling part)</li>
-<li>All of a sudden, there were no compilation errors and it &ldquo;Just Worked&rdquo;.
-Revisiting the solution, I wanted to address the <code>assert</code> that should pretty much always be avoided since it can cause a panic..</li>
+<li>All of a sudden, there were no compilation errors and it &ldquo;Just Worked&rdquo;.</li>
 </ul>
+<p>Revisiting the solution, I wanted to address the <code>assert</code> that should pretty much always be avoided since it can cause a panic.</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gleam" data-lang="gleam"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">fn</span> <span style="color:#666;font-weight:bold;font-style:italic">decoder</span>() {
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> file_decoder = {
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">use</span> name &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(<span style="color:#666;font-style:italic">&#34;name&#34;</span>, decode.string)
+</span></span><span style="display:flex;"><span>    decode.<span style="color:#666;font-weight:bold;font-style:italic">success</span>(name)
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="font-weight:bold;text-decoration:underline">use</span> length &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(<span style="color:#666;font-style:italic">&#34;length&#34;</span>, decode.int)
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> indices =
@@ -236,7 +246,7 @@ Revisiting the solution, I wanted to address the <code>assert</code> that should
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#666;font-weight:bold;font-style:italic">files</span>([])
 </span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>The result might still not be easy to read and grasp(especially if you&rsquo;re new to Gleam, functional programming or the <code>use</code> semantics) but I really liked how consistent it felt with the otherwise &ldquo;regular&rdquo; decoding of a simple srructure. We don&rsquo;t need an extra special decode implementation, we just combine the regular building pieces in a slightly different way!
+</span></span></code></pre></div><p>The result might still not be easy to read and grasp(especially if you&rsquo;re new to Gleam, functional programming or the <code>use</code> semantics) but I really liked how consistent it felt with the otherwise &ldquo;regular&rdquo; decoding of a simple structure. We don&rsquo;t need an extra special decode implementation, we just combine the regular building pieces in a slightly different way!
 Gleam&rsquo;s <code>decode</code> might not be as terse and convenient as decoders or deserializers found in other languages but what you get instead is consistency, no magic, and that the regular approach to decoding looks and works the same no matter how &ldquo;interesting&rdquo; the data structure might be.
 If you would like to understand more about the implementation details and Gleam in general I highly recommend diving in! Gleam is a wonderful language, ecosystem and community. Though do be aware, returning to your previous go-to language might induce(including, but not limited to):</p>
 <ul>
