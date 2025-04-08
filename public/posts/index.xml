@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on JonasHedEng Blog</title>
+    <link>https://jonashedeng.github.io/posts/</link>
+    <description>Recent content in Posts on JonasHedEng Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 07 Apr 2025 20:03:51 +0200</lastBuildDate>
+    <atom:link href="https://jonashedeng.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>In praise of Gleam&#39;s decode</title>
+      <link>https://jonashedeng.github.io/posts/gleam-decode/</link>
+      <pubDate>Mon, 07 Apr 2025 20:03:51 +0200</pubDate>
+      <guid>https://jonashedeng.github.io/posts/gleam-decode/</guid>
+      <description>&lt;p&gt;When first encountering Gleam&amp;rsquo;s approach to encoding/decoding data to/from outside of Gleam, I (just as many other people new to Gleam) think it strange that such a modern and well-thought out language still has a relatively verbose and manual-ish[&lt;a href=&#34;#footnotes&#34;&gt;1&lt;/a&gt;] way of doing it. I&amp;rsquo;ve now realized I much prefer this approach over some combination of terseness, weird dedicated syntax, macros, magics, etc.&lt;/p&gt;&#xA;&lt;p&gt;While working on a little side project I&amp;rsquo;m doing just for fun (and to learn), I encountered an &amp;ldquo;interesting&amp;rdquo; data structure that I wanted to extract a couple of fields from. Initially I thought it to be a basic dictionary-like data structure but I soon realized it was a bit more convoluted.&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

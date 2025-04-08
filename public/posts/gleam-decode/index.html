@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en-us"
+  dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+<link rel="icon" type="image/ico" href="https://jonashedeng.github.io//favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://jonashedeng.github.io//favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://jonashedeng.github.io//favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="https://jonashedeng.github.io//android-chrome-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="https://jonashedeng.github.io//apple-touch-icon.png">
+
+<meta name="description" content=""/>
+
+
+
+<title>
+    
+    In praise of Gleam&#39;s decode | JonasHedEng Blog
+    
+</title>
+
+<link rel="canonical" href="https://jonashedeng.github.io/posts/gleam-decode/"/>
+
+<meta property="og:url" content="https://jonashedeng.github.io/posts/gleam-decode/">
+  <meta property="og:site_name" content="JonasHedEng Blog">
+  <meta property="og:title" content="In praise of Gleam&#39;s decode">
+  <meta property="og:description" content="When first encountering Gleam’s approach to encoding/decoding data to/from outside of Gleam, I (just as many other people new to Gleam) think it strange that such a modern and well-thought out language still has a relatively verbose and manual-ish[1] way of doing it. I’ve now realized I much prefer this approach over some combination of terseness, weird dedicated syntax, macros, magics, etc.
+While working on a little side project I’m doing just for fun (and to learn), I encountered an “interesting” data structure that I wanted to extract a couple of fields from. Initially I thought it to be a basic dictionary-like data structure but I soon realized it was a bit more convoluted.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2025-04-07T20:03:51+02:00">
+    <meta property="article:modified_time" content="2025-04-07T20:03:51+02:00">
+    <meta property="article:tag" content="Gleam">
+    <meta property="article:tag" content="Decode">
+    <meta property="article:tag" content="Rust">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/assets/combined.min.d41b3695a49df1204cc1f194e2a9e350d229573b2d029ab3dd2e0d54ea75e2de.css" media="all">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+</head>
+
+
+
+
+
+
+
+<body class="auto">
+
+  <div class="content">
+    <header>
+      
+
+<div class="header">
+
+    
+
+    <h1 class="header-title">
+        <a href="https://jonashedeng.github.io/">JonasHedEng Blog</a>
+    </h1>
+
+    <div class="flex">
+        
+
+        
+        
+      
+        <p class="small ">
+            <a href="/" >
+                /home
+            </a>
+        </p>
+        
+      
+        <p class="small ">
+            <a href="/posts" >
+                /posts
+            </a>
+        </p>
+        
+        
+    </div>
+
+    
+
+</div>
+
+    </header>
+
+    <main class="main">
+      
+
+
+
+
+<div class="breadcrumbs"><a href="/">Home</a><span class="breadcrumbs-separator">/</span><a href="/posts/">Posts</a><span class="breadcrumbs-separator">/</span>
+        <a href="/posts/gleam-decode/">In praise of Gleam&#39;s decode</a></div>
+
+
+<div >
+
+  <div class="single-intro-container">
+
+    
+
+    <h1 class="single-title">In praise of Gleam&#39;s decode</h1>
+    
+
+    
+
+    <p class="single-readtime">
+      
+      
+      
+      <time datetime="2025-04-07T20:03:51&#43;02:00">April 7, 2025</time>
+      
+
+      
+    </p>
+
+  </div>
+
+  
+
+  
+
+  
+
+  
+
+  <div class="single-content">
+    <p>When first encountering Gleam&rsquo;s approach to encoding/decoding data to/from outside of Gleam, I (just as many other people new to Gleam) think it strange that such a modern and well-thought out language still has a relatively verbose and manual-ish[<a href="#footnotes">1</a>] way of doing it. I&rsquo;ve now realized I much prefer this approach over some combination of terseness, weird dedicated syntax, macros, magics, etc.</p>
+<p>While working on a little side project I&rsquo;m doing just for fun (and to learn), I encountered an &ldquo;interesting&rdquo; data structure that I wanted to extract a couple of fields from. Initially I thought it to be a basic dictionary-like data structure but I soon realized it was a bit more convoluted.</p>
+<p>A bit of brain wrestling later, I managed to write this somewhat unreadable snippet that seemingly does the job. At the time I didn&rsquo;t think much about it, I was mostly satisfied that I got something working.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gleam" data-lang="gleam"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">fn</span> <span style="color:#666;font-weight:bold;font-style:italic">decoder</span>() {
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;text-decoration:underline">use</span> length &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(<span style="color:#666;font-style:italic">&#34;length&#34;</span>, decode.int)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> idcs =
+</span></span><span style="display:flex;"><span>    list.<span style="color:#666;font-weight:bold;font-style:italic">range</span>(0, length - 1)
+</span></span><span style="display:flex;"><span>    |&gt; list.<span style="color:#666;font-weight:bold;font-style:italic">map</span>(<span style="font-weight:bold;text-decoration:underline">fn</span>(i) { int.<span style="color:#666;font-weight:bold;font-style:italic">to_string</span>(i) })
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> <span style="font-weight:bold;text-decoration:underline">assert</span> [first, ..rest] = idcs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> initial = <span style="font-weight:bold;text-decoration:underline">fn</span>(acc: <span style="color:#666;font-weight:bold;font-style:italic">List</span>(<span style="">S</span>tring)) -&gt; decode.<span style="color:#666;font-weight:bold;font-style:italic">Decoder</span>(<span style="color:#666;font-weight:bold;font-style:italic">List</span>(<span style="">S</span>tring)) {
+</span></span><span style="display:flex;"><span>    <span style="font-weight:bold;text-decoration:underline">use</span> next &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(first, file)
+</span></span><span style="display:flex;"><span>    decode.<span style="color:#666;font-weight:bold;font-style:italic">success</span>([next, ..acc])
+</span></span><span style="display:flex;"><span>  }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> final =
+</span></span><span style="display:flex;"><span>    list.<span style="color:#666;font-weight:bold;font-style:italic">fold</span>(rest, initial, <span style="font-weight:bold;text-decoration:underline">fn</span>(acc_fn, index) -&gt; <span style="font-weight:bold;text-decoration:underline">fn</span>(<span style="color:#666;font-weight:bold;font-style:italic">List</span>(<span style="">S</span>tring)) -&gt;
+</span></span><span style="display:flex;"><span>      decode.<span style="color:#666;font-weight:bold;font-style:italic">Decoder</span>(<span style="color:#666;font-weight:bold;font-style:italic">List</span>(<span style="">S</span>tring)) {
+</span></span><span style="display:flex;"><span>      <span style="font-weight:bold;text-decoration:underline">fn</span>(acc: <span style="color:#666;font-weight:bold;font-style:italic">List</span>(<span style="">S</span>tring)) {
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">use</span> next &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(index, file)
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">acc_fn</span>([next, ..acc])
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#666;font-weight:bold;font-style:italic">final</span>([])
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>After about a day though, I went back to the snippet, trying to determine how unreadable it is. On a first glance, even with the implementation somewhat recent in memory, I struggled to understand and break down <em>how</em> it worked fully. A good start, you might think(it is), would be to make sure you understand the incoming data first. Let&rsquo;s take a look:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>  &#34;length&#34;: 3,
+</span></span><span style="display:flex;"><span>  &#34;0&#34;: {&#34;name&#34;: <span style="color:#666;font-style:italic">&#34;file1.txt&#34;</span>},
+</span></span><span style="display:flex;"><span>  &#34;1&#34;: {&#34;name&#34;: <span style="color:#666;font-style:italic">&#34;file2.txt&#34;</span>},
+</span></span><span style="display:flex;"><span>  &#34;2&#34;: {&#34;name&#34;: <span style="color:#666;font-style:italic">&#34;file3.txt&#34;</span>}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Now, it clicked. The reason I struggled so with getting the decoder decent was that the incoming data structure was &ldquo;interesting&rdquo; at best and rather not at all how I would&rsquo;ve preferred it. What I also realized, was that although having worked professionally in Rust for about 6-7 years, I would dread having to implement the decoder for such a data structure (at least for a few seconds, before realizing it&rsquo;s not that difficult, serde is great!). With Gleam&rsquo;s <code>decode</code> however, I did it without fully realizing how inconvenient the incoming data was. I simply took it step by step.</p>
+<ul>
+<li>First, decode the <code>length</code>.</li>
+<li>Then, generate the decoder for the first field.</li>
+<li>Now, figure out how to pass that to the decoder of the next field. Wait, or should the next field take the current decoder as a parameter? (This was the brain wrestling part)</li>
+<li>All of a sudden, there were no compilation errors and it &ldquo;Just Worked&rdquo;.
+Revisiting the solution, I wanted to address the <code>assert</code> that should pretty much always be avoided since it can cause a panic..</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-gleam" data-lang="gleam"><span style="display:flex;"><span><span style="font-weight:bold;text-decoration:underline">fn</span> <span style="color:#666;font-weight:bold;font-style:italic">decoder</span>() {
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;text-decoration:underline">use</span> length &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(<span style="color:#666;font-style:italic">&#34;length&#34;</span>, decode.int)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> indices =
+</span></span><span style="display:flex;"><span>    list.<span style="color:#666;font-weight:bold;font-style:italic">range</span>(0, length - 1)
+</span></span><span style="display:flex;"><span>    |&gt; list.<span style="color:#666;font-weight:bold;font-style:italic">map</span>(int.to_string)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="font-weight:bold;font-style:italic;text-decoration:underline">let</span> files =
+</span></span><span style="display:flex;"><span>    list.<span style="color:#666;font-weight:bold;font-style:italic">fold</span>(indices, decode.success, <span style="font-weight:bold;text-decoration:underline">fn</span>(acc_fn, index) {
+</span></span><span style="display:flex;"><span>      <span style="font-weight:bold;text-decoration:underline">fn</span>(acc: <span style="color:#666;font-weight:bold;font-style:italic">List</span>(<span style="">S</span>tring)) {
+</span></span><span style="display:flex;"><span>        <span style="font-weight:bold;text-decoration:underline">use</span> next &lt;- decode.<span style="color:#666;font-weight:bold;font-style:italic">field</span>(index, file_decoder)
+</span></span><span style="display:flex;"><span>        <span style="color:#666;font-weight:bold;font-style:italic">acc_fn</span>([next, ..acc])
+</span></span><span style="display:flex;"><span>      }
+</span></span><span style="display:flex;"><span>    })
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>  <span style="color:#666;font-weight:bold;font-style:italic">files</span>([])
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>The result might still not be easy to read and grasp(especially if you&rsquo;re new to Gleam, functional programming or the <code>use</code> semantics) but I really liked how consistent it felt with the otherwise &ldquo;regular&rdquo; decoding of a simple srructure. We don&rsquo;t need an extra special decode implementation, we just combine the regular building pieces in a slightly different way!
+Gleam&rsquo;s <code>decode</code> might not be as terse and convenient as decoders or deserializers found in other languages but what you get instead is consistency, no magic, and that the regular approach to decoding looks and works the same no matter how &ldquo;interesting&rdquo; the data structure might be.
+If you would like to understand more about the implementation details and Gleam in general I highly recommend diving in! Gleam is a wonderful language, ecosystem and community. Though do be aware, returning to your previous go-to language might induce(including, but not limited to):</p>
+<ul>
+<li>the feeling of bloat,</li>
+<li>uneasyness around &ldquo;automagic&rdquo; features,</li>
+<li>frustration of having too many choices to implement that one feature,</li>
+<li>confusion about why there are so many language features doing what one smarter one would achieve(yes, I miss <code>use</code> in Rust these days&hellip;)</li>
+</ul>
+<h6 class="heading" id="footnotes">
+  Footnotes
+  <a class="anchor" href="#footnotes">#</a>
+</h6>
+<ol>
+<li>The Gleam Language Server has a bunch of really cool code actions that can do some, or in some cases, all of the work for you!</li>
+</ol>
+
+    
+  </div>
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+  <div class="back-to-top">
+    <a href="#top">
+      back to top
+    </a>
+  </div>
+  
+
+</div>
+
+
+    </main>
+  </div>
+
+  
+  
+
+
+
+
+
+    
+
+
+
+
+  <footer>
+    
+
+    
+    
+
+
+
+
+
+    
+
+
+
+
+    
+    <p>Powered by
+        <a href="https://gohugo.io/">Hugo</a>
+        and
+        <a href="https://github.com/tomfran/typo">tomfran/typo</a>
+    </p>
+    
+    
+    
+
+
+  </footer>
+
+  
+</body>
+
+<script src="/js/theme-switch.js"></script>
+<script defer src="/js/copy-code.js"></script>
+</html>
